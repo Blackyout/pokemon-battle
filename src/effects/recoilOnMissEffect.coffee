@@ -9,7 +9,7 @@ class RecoilOnMissEffect extends DefaultEffect
     recoil = Math.min Math.floor(attacker.maxHp / 2), attacker.hp
     
     attacker.hp -= recoil
-    log.message attacker.trainerAndName() + " kept going and crashed for " + recoil + " HP (" + Math.round(recoil / attacker.maxHp * 100) + "%)!"
+    log.message (if attacker.trainer.id=='0' then attacker.name else attacker.trainerAndName()) + " kept going and crashed for " + recoil + " (" + attacker.hp + "/" + attacker.maxHp + ")!"
 
 
 module.exports = RecoilOnMissEffect

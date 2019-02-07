@@ -22,7 +22,7 @@ class HealEffect extends DefaultEffect
     return if heal == 0
     
     attacker.hp += heal
-    log.message attacker.trainerAndName() + " healed " +  heal + " HP (" + Math.round(heal / attacker.maxHp * 100) + "%)!"
+    log.message (if attacker.trainer.id=='0' then attacker.name else attacker.trainerAndName()) + " healed " +  heal + " (" + attacker.hp + "/" + attacker.maxHp + ")!"
 
 
 module.exports = HealEffect

@@ -16,17 +16,22 @@ class Battle
   
     for pokemon in @trainer2.team
       pokemon.subscribeToFaint(this)
-
+    
+    @damage = {}
+    @damage[@trainer1.id] = 0
+    @damage[@trainer2.id] = 0
+    
   start: ->
     @log = new Log
     @winner = null
+    @loser = null
     until @winner?
       this.nextTurn()
     
-    loser = if @winner == @trainer1 then @trainer2 else @trainer1
-    @log.message @winner.nameOrYou() + " defeated " + loser.nameOrYou() + "!"
+    @loser = if @winner == @trainer1 then @trainer2 else @trainer1
+    @log.message (if @winner.id=='0' then @winner.mainPokemon.name else @winner.nameOrYou()) + " defeated " + (if @loser.id=='0' then @loser.mainPokemon.name else @loser.nameOrYou()) + "!"
     for pokemon in @winner.team
-      @log.message pokemon.name + ": " + pokemon.hp + " HP (" + Math.round(pokemon.hp / pokemon.maxHp * 100) + "%) left."
+      @log.message pokemon.name + " (" + pokemon.hp + "/" + pokemon.maxHp + ")."
 
     return @log
   
@@ -37,7 +42,13 @@ class Battle
     # Choose moves
     pokemon1.chooseMove pokemon2
     pokemon2.chooseMove pokemon1
-    throw new Error("One of the pokemon doesn't have an attack move.") unless pokemon1.move? and pokemon2.move?
+    
+    # In case there are no valid moves, use struggle
+    if not pokemon1.move?
+      pokemon1.move = new Move 165
+    if not pokemon2.move?
+      pokemon2.move = new Move 165
+    #throw new Error("One of the pokemon doesn't have an attack move.") unless pokemon1.move? and pokemon2.move?
     
     # Switch out pokemon?
     newPokemon1 = pokemon1.trainer.maybeSwitchOut pokemon1, pokemon2, @log
@@ -75,17 +86,17 @@ class Battle
   
   doAttack: (attacker, defender) ->
     if attacker.canAttack @log
-      @log.message attacker.trainerAndName() + " used " + attacker.move.name + "!"
+      @log.message (if attacker.trainer.id=='0' then attacker.name else attacker.trainerAndName()) + " used " + attacker.move.name + "!"
       effectiveness = attacker.move.effectiveness attacker, defender
       miss = false
 
       if effectiveness == 0
-        @log.message "It doesn't affect " + defender.trainerAndName() + "..."
+        @log.message "It doesn't affect " + (if defender.trainer.id=='0' then defender.name else defender.trainerAndName()) + "..."
         miss = true
 
       else
         if Math.random() * 100 > attacker.move.accuracy
-          @log.message attacker.trainerAndName() + "'s attack missed!"
+          @log.message (if attacker.trainer.id=='0' then attacker.name else attacker.trainerAndName()) + "'s attack missed!"
           miss = true
         
         else
@@ -104,6 +115,7 @@ class Battle
             
             damage = @damageCalculator.calculate attacker.move, attacker, defender, critical, random
             defender.takeDamage damage, "%(pokemon) was hit for %(damage)", @log
+            @damage[attacker.trainer.id] += damage
             
             attacker.move.afterDamage attacker, defender, damage, @log
             
@@ -113,7 +125,7 @@ class Battle
     @log.endAttack()
   
   notifyFaint: (pokemon) ->
-    @log.message pokemon.trainerAndName() + " fainted!"
+    @log.message (if pokemon.trainer.id=='0' then pokemon.name else pokemon.trainerAndName()) + " fainted!"
     @stopMultiHit = true
 
     otherTrainer = if pokemon.trainer == @trainer1 then @trainer2 else @trainer1

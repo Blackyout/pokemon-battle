@@ -20,7 +20,9 @@ class Log
   toString: ->
     str = ''
     for turn in @log
+      turn = [] unless turn
       for attack in turn
+        attack = [] unless attack
         for message in attack
           str += message + "\n"
         

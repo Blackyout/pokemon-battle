@@ -1,5 +1,5 @@
 class Trainer
-  constructor: (@name) ->
+  constructor: (@name, @id) ->
     @team = []
   
   addPokemon: (pokemon) ->

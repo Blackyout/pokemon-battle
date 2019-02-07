@@ -5,14 +5,14 @@ Strategy = require './strategy'
 
 class Pokemon
   this.pokedex = JSON.parse fs.readFileSync(__dirname + '/../data/pokemon.json').toString()
-
-  constructor: (id) ->
-    pokemon = @constructor.pokedex[id]
-    throw new Error("Pokemon not found: " + id) unless pokemon?
+  
+  constructor: (pokemon) ->
+    #pokemon = @constructor.pokedex[id]
+    #throw new Error("Pokemon not found: " + id) unless pokemon?
     
     @name = pokemon.name
     @types = (new Type typeId for typeId in pokemon.types)
-    @weight = pokemon.weight / 10
+    @weight = 100
     
     @stats = {
         base: pokemon.stats,
@@ -25,8 +25,8 @@ class Pokemon
         },
     }
     
-    @maxHp = 141 + 2 * pokemon.stats.hp
-    @hp = @maxHp
+    @maxHp = pokemon.stats.maxHp
+    @hp = pokemon.stats.hp
 
     @conditions = {}
     @ailment = null
@@ -36,6 +36,8 @@ class Pokemon
     @moves = @strategy.chooseBuild (new Move moveId for moveId in pokemon.moves)
   
   trainerAndName: ->
+    if @trainer.id == '0'
+      return @name
     if not @trainer.name?
       return "your " + @name
     else
@@ -51,11 +53,12 @@ class Pokemon
     @move = @strategy.chooseMove defender
 
   takeDamage: (damage, message, log) ->
+    realDamage = damage
     damage = @hp if damage > @hp
     @hp -= damage
 
-    message = message.replace '%(pokemon)', this.trainerAndName()
-    message = message.replace '%(damage)', damage + " HP (" + Math.round(damage / @maxHp * 100) + "%)"
+    message = message.replace '%(pokemon)', if @trainer.id=='0' then @name else this.trainerAndName()
+    message = message.replace '%(damage)', realDamage + " (" + @hp + "/" + @maxHp + ")"
     log.message message
 
     unless this.isAlive()
@@ -110,20 +113,20 @@ class Pokemon
     statName = this.statName stat
     switch
       when @stats.stage[stat] == 6 and change > 0
-        log.message this.trainerAndName() "'s " + statName + " cannot rise any higher."
+        log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) "'s " + statName + " cannot rise any higher."
       when @stats.stage[stat] == -6 and change < 0
-        log.message this.trainerAndName() "'s " + statName + " cannot fall any lower."
+        log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) "'s " + statName + " cannot fall any lower."
       else
         change = 6 - @stats.stage[stat] if @stats.stage[stat] + change > 6
         change = -6 - @stats.stage[stat] if @stats.stage[stat] + change < -6
         @stats.stage[stat] += change
         switch change
-          when 1 then log.message this.trainerAndName() + "'s " + statName + " rose!"
-          when 2 then log.message this.trainerAndName() + "'s " + statName + " sharply rose!"
-          when 3 then log.message this.trainerAndName() + "'s " + statName + " drastically rose!"
-          when -1 then log.message this.trainerAndName() + "'s " + statName + " fell!"
-          when -2 then log.message this.trainerAndName() + "'s " + statName + " harshly fell!"
-          when -3 then log.message this.trainerAndName() + "'s " + statName + " severely fell!"
+          when 1 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " rose!"
+          when 2 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " sharply rose!"
+          when 3 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " drastically rose!"
+          when -1 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " fell!"
+          when -2 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " harshly fell!"
+          when -3 then log.message (if this.trainer.id=='0' then this.name else this.trainerAndName()) + "'s " + statName + " severely fell!"
   
   typeAdvantageAgainst: (pokemon) ->
     ( type for type in @types when type.effectiveAgainst pokemon.types ).length > 0

@@ -11,7 +11,7 @@ pokemon.lookup = (name) ->
     when name == 'nidoran m' then 32
     else (id for id, pkmn of Pokemon.pokedex when name is pkmn.name.toLowerCase())[0]
 
-pokemon.battle = (team1, team2) ->
+###pokemon.battle = (team1, team2) ->
   # Standarize input
   team1 = { trainer: null,      pokemon: team1 } unless team1 instanceof Object and team1 not instanceof Array
   team2 = { trainer: 'the foe', pokemon: team2 } unless team2 instanceof Object and team2 not instanceof Array
@@ -28,7 +28,45 @@ pokemon.battle = (team1, team2) ->
 
   # Fight!  
   battle = new Battle trainer1, trainer2
-  return battle.start().toString()
+  return battle.start().toString()###
+  
+pokemon.battle = (team1, team2, fighter1, id1, fighter2, id2) ->
+  # Standarize input
+  team1 = { trainer: fighter1,      pokemon: team1 } #unless team1 instanceof Object and team1 not instanceof Array
+  team2 = { trainer: fighter2, pokemon: team2 } #unless team2 instanceof Object and team2 not instanceof Array
+  
+  team1.pokemon = [ team1.pokemon ] #unless team1.pokemon instanceof Array
+  team2.pokemon = [ team2.pokemon ] #unless team2.pokemon instanceof Array
+  
+  # Build trainers
+  trainer1 = new Trainer team1.trainer, id1
+  trainer1.addPokemon new Pokemon pokemon for pokemon in team1.pokemon
+  
+  trainer2 = new Trainer team2.trainer, id2
+  trainer2.addPokemon new Pokemon pokemon for pokemon in team2.pokemon
+
+  # Fight!  
+  battle = new Battle trainer1, trainer2
+  #console.log(battle)
+  battleMessage = battle.start().toString()
+  response = {
+    battle: {
+      log: battleMessage.replace(/\n\n\n/gm,"\n\n").replace(/(\r\n|\n|\r)/gm,"\\n"),
+      winner: {
+        id: battle.winner.id,
+        name: battle.winner.name,
+        damage: battle.damage[battle.winner.id],
+        hp: battle.winner.mainPokemon.hp
+      },
+      loser: {
+        id: battle.loser.id,
+        name: battle.loser.name,
+        damage: battle.damage[battle.loser.id],
+        hp: battle.loser.mainPokemon.hp
+      }
+    }
+  }
+  return JSON.stringify(response)
   
 pokemon.build = (pokemonId) ->
   pokemon = new Pokemon pokemonId
